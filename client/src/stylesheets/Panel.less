@@ -1,0 +1,33 @@
+.panel {
+  min-width: 250px;
+  width: 20vw;
+  height: 100vh;
+  padding: 2em;
+  display: grid;
+  grid-template-rows: 15% 65% 10%;
+  grid-row-gap: 5%;
+
+  .panel-heading {
+    width: 20vw;
+
+    img {
+      height: 100%;
+      padding: 1.5em;
+    }
+  }
+
+  .list-group-item {
+    border: 0;
+
+    &:hover {
+      color: black;
+      cursor: pointer;
+    }
+  }
+
+  .progress-wrapper {
+    padding: 1em;
+    display: grid;
+    grid-row-gap: 12px;
+  }
+}
