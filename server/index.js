@@ -34,7 +34,7 @@ function traverseDirectory(directory) {
   return data;
 }
 
-const root = traverseDirectory("../");
+let root = traverseDirectory("../");
 
 app.get("/api/files", function(request, response) {
   response.send(root);
