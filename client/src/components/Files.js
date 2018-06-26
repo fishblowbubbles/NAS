@@ -1,6 +1,9 @@
 import React, { Component } from "react";
+import Dropdown from "./Dropdown.js";
 import { FilesContext } from "./Main.js";
 import "../stylesheets/Files.less";
+
+export const DropdownContext = React.createContext();
 
 class Files extends Component {
   state = {
@@ -8,54 +11,65 @@ class Files extends Component {
   };
 
   handleDirectoryClick = directory => e => {
-    let newPath = this.state.path;
-    newPath.push(directory);
-    this.updatePath(newPath);
+    this.state.path.push(directory);
+    this.updatePath();
   };
 
   handleBackClick = e => {
-    let newPath = this.state.path;
-    newPath.pop();
-    this.updatePath(newPath);
+    this.state.path.pop();
+    this.updatePath();
   };
 
-  updatePath = newPath => {
+  updatePath = () => {
     this.setState({
-      path: newPath
+      path: this.state.path
     });
   };
 
   displayDirectoryContents = files => {
     const directory =
-      this.state.path.length === 0 ? files : this.getContentFromPath(files, 0);
-
-    return directory.map(item => (
-      <li
-        className="list-group-item"
-        onClick={item.contents ? this.handleDirectoryClick(item.name) : ""}
-      >
-        <img src={setIcon(item.type)} />
-        <div>{item.name}</div>
-        <div className="item-mtime">
-          {item.mtime ? new Date(item.mtime).toLocaleString() : "-"}
-        </div>
-        <div className="item-size">{convertBytes(item.size)}</div>
-        <button>. . .</button>
-      </li>
-    ));
+      this.state.path.length === 0 ? files : this.getContentsFromPath(files, 0);
+    return directory.length > 0 ? this.createListItems(directory) : <Empty />;
   };
 
-  getContentFromPath = (directory, depth) => {
+  getContentsFromPath = (directory, depth) => {
     for (let i = 0; i < directory.length; i += 1) {
       if (directory[i].name === this.state.path[depth]) {
         return depth === this.state.path.length - 1
           ? directory[i].contents
-          : this.getContentFromPath(directory[i].contents, (depth += 1));
+          : this.getContentsFromPath(directory[i].contents, (depth += 1));
       }
     }
   };
 
-  
+  createListItems = directory => {
+    return directory.map(item => {
+      let itemPath = Array.from(this.state.path);
+      itemPath.push(item.name);
+
+      return (
+        <li
+          className="list-group-item"
+          onClick={item.contents ? this.handleDirectoryClick(item.name) : ""}
+        >
+          <img src={setIcon(item.type)} />
+          <div>{item.name}</div>
+          <div className="item-mtime">
+            {item.mtime ? new Date(item.mtime).toLocaleString() : "-"}
+          </div>
+          <div className="item-size">{convertBytes(item.size)}</div>
+          <DropdownContext.Provider
+            value={{
+              path: itemPath
+            }}
+          >
+            <Dropdown />
+          </DropdownContext.Provider>
+        </li>
+      );
+    });
+  };
+
   render() {
     return (
       <div className="files">
@@ -78,8 +92,8 @@ class Files extends Component {
           <FilesContext.Consumer>
             {context =>
               context.loading
-              ? ""
-              : this.displayDirectoryContents(context.files)
+                ? ""
+                : this.displayDirectoryContents(context.files)
             }
           </FilesContext.Consumer>
         </ul>
@@ -91,6 +105,13 @@ class Files extends Component {
 const Search = () => (
   <div className="search">
     <input className="form-control" type="text" placeholder="SEARCH" />
+  </div>
+);
+
+const Empty = () => (
+  <div className="folder-empty">
+    <img src="/assets/empty.png" />
+    <div>Empty</div>
   </div>
 );
 

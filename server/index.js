@@ -1,17 +1,18 @@
 const express = require("express");
+const bodyParser = require("body-parser");
 const path = require("path");
 const fs = require("fs");
 
 const app = express();
 const port = process.env.PORT || 5000;
 
-function traverseDirectory(directory) {
+traverseDirectory = directory => {
   let data = {
     files: [],
     size: 0
   };
 
-  fs.readdirSync(directory).forEach(function(fileName) {
+  fs.readdirSync(directory).forEach(fileName => {
     let filePath = path.resolve(directory, fileName);
     let fileJson = { name: fileName };
 
@@ -32,14 +33,25 @@ function traverseDirectory(directory) {
   });
 
   return data;
-}
+};
 
 let root = traverseDirectory("../");
 
-app.get("/api/files", function(request, response) {
+app.use(bodyParser.json());
+app.use(express.static(path.join(__dirname, "../client/build")));
+
+app.get("/", (request, response) => {
+  response.sendFile(path.join(__dirname, "../client/build", "index.html"))
+})
+
+app.get("/api/files", (request, response) => {
   response.send(root);
 });
 
-app.listen(port, function() {
+app.post("/api/download", (request, response) => {
+  const path = request.body;
+});
+
+app.listen(port, () => {
   console.log(`Listening on port ${port}...`);
 });

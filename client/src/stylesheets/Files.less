@@ -29,7 +29,7 @@
   .list-group {
     overflow-y: auto;
   }
-  
+
   .list-group-item,
   .list-group-heading {
     border: none;
@@ -37,7 +37,7 @@
     height: 10%;
     padding: 1em;
     display: grid;
-    grid-template-columns: 72px 2fr 1fr 72px 72px;
+    grid-template-columns: 72px 1fr 176px 72px 72px;
     grid-column-gap: 2em;
     align-items: center;
   }
@@ -55,12 +55,49 @@
     .item-size {
       text-align: right;
     }
+
+    img {
+      width: 24px;
+      height: 24px;
+      justify-self: center;
+    }
+    
+    .dropdown {
+      position: relative;
+
+      .dropdown-button {
+
+      }
+
+      .dropdown-panel {
+        position: absolute;
+        right: 0;
+        z-index: 10;
+
+        &#visible {
+          display: visible;
+        }
+        &#hidden {
+          display: none;
+        }
+      }
+    }
   }
 
-  img {
-    width: 24px;
-    height: 24px;
-    justify-self: center;
+  .folder-empty {
+    font-weight: bold;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-flow: column;
+    align-items: center;
+    justify-content: center;
+
+    img {
+      width: 72px;
+      height: 72px;
+      padding: 1em;
+    }
   }
 
   button {

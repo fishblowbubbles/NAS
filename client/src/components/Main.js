@@ -14,10 +14,10 @@ class Main extends Component {
 
   componentDidMount() {
     try {
-      this.fetchFileData().then(data => {
+      this.fetchDirectoryMap().then(map => {
         this.setState({
-          files: data.files,
-          used: data.size,
+          files: map.files,
+          used: map.size,
           loading: false
         });
       });
@@ -26,19 +26,21 @@ class Main extends Component {
     }
   }
 
-  fetchFileData = async () => {
+  fetchDirectoryMap = async () => {
     const response = await fetch("/api/files");
+    const body = await response.json();
+
     if (!response.ok) {
       throw Error(response.statusText);
     }
-    return response.json();
+    return body;
   };
 
   render() {
     return (
       <div className="content">
         <FilesContext.Provider value={this.state}>
-          <Panel handleClick={this.props.handleClick}/>
+          <Panel handleClick={this.props.handleClick} />
           <div className="content-wrapper">
             <Files />
           </div>
