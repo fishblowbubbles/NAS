@@ -1,17 +1,18 @@
 import React, { Component } from "react";
 import Dropdown from "./Dropdown.js";
 import { FilesContext } from "./Main.js";
+import Toolbar from "./Toolbar.js";
 import "../stylesheets/Files.less";
 
-export const DropdownContext = React.createContext();
+export const PathContext = React.createContext();
 
 class Files extends Component {
   state = {
     path: []
   };
 
-  handleDirectoryClick = directory => e => {
-    this.state.path.push(directory);
+  handleFolderClick = folder => e => {
+    this.state.path.push(folder);
     this.updatePath();
   };
 
@@ -26,63 +27,85 @@ class Files extends Component {
     });
   };
 
-  displayDirectoryContents = files => {
-    const directory =
+  displayFolderContents = files => {
+    const folder =
       this.state.path.length === 0 ? files : this.getContentsFromPath(files, 0);
-    return directory.length > 0 ? this.createListItems(directory) : <Empty />;
+    return folder.length > 0 ? this.createListItems(folder) : <Empty />;
   };
 
-  getContentsFromPath = (directory, depth) => {
-    for (let i = 0; i < directory.length; i += 1) {
-      if (directory[i].name === this.state.path[depth]) {
+  getContentsFromPath = (folder, depth) => {
+    for (let i = 0; i < folder.length; i += 1) {
+      if (folder[i].name === this.state.path[depth]) {
         return depth === this.state.path.length - 1
-          ? directory[i].contents
-          : this.getContentsFromPath(directory[i].contents, (depth += 1));
+          ? folder[i].contents
+          : this.getContentsFromPath(folder[i].contents, (depth += 1));
       }
     }
   };
 
-  createListItems = directory => {
-    return directory.map(item => {
+  createListItems = folder =>
+    folder.map(item => {
       let itemPath = Array.from(this.state.path);
       itemPath.push(item.name);
 
       return (
         <li
           className="list-group-item"
-          onClick={item.contents ? this.handleDirectoryClick(item.name) : ""}
+          onClick={item.contents ? this.handleFolderClick(item.name) : ""}
         >
-          <img src={setIcon(item.type)} />
-          <div>{item.name}</div>
+          {this.setFileIcon(item.type)}
+          <div className="item-name">{item.name}</div>
           <div className="item-mtime">
             {item.mtime ? new Date(item.mtime).toLocaleString() : "-"}
           </div>
-          <div className="item-size">{convertBytes(item.size)}</div>
-          <DropdownContext.Provider
-            value={{
-              path: itemPath
-            }}
-          >
-            <Dropdown />
-          </DropdownContext.Provider>
+          <FilesContext.Consumer>
+            {context => (
+              <div className="item-size">{context.convertBytes(item.size)}</div>
+            )}
+          </FilesContext.Consumer>
+            <Dropdown path={itemPath}/>
         </li>
       );
     });
+
+  setNavIcon = () =>
+    this.state.path.length === 0 ? (
+      <img src="/assets/home.png" />
+    ) : (
+      <button
+        className="btn btn-outline-secondary"
+        onClick={this.handleBackClick}
+      >
+        <img src="/assets/back.png" />
+      </button>
+    );
+
+  setFileIcon = type => {
+    let src = "/assets/file.png";
+    if (type === "folder") {
+      src = "/assets/folder.png";
+    } else if (type === ".js") {
+      src = "/assets/js.png";
+    } else if (type === ".json") {
+      src = "/assets/json.png";
+    }
+    return <img src={src} />;
   };
 
   render() {
     return (
       <div className="files">
         <div className="files-heading">
-          <div className="files-heading-text">FILES</div>
-          <Search />
+          <div>
+            <div className="files-heading-text">FILES</div>
+            <PathContext.Provider value={this.state}>
+              <Breadcrumb />
+            </PathContext.Provider>
+          </div>
+          <Toolbar />
         </div>
         <li className="list-group-heading">
-          {this.state.path.length === 0 ? (
-            <div />
-          ) : (
-            <button onClick={this.handleBackClick}>BACK</button>
-          )}
+          {this.setNavIcon()}
           <div>Name</div>
           <div>Modified</div>
           <div>Size</div>
@@ -91,9 +114,9 @@ class Files extends Component {
         <ul className="list-group list-group-flush">
           <FilesContext.Consumer>
             {context =>
-              context.loading
+              context.state.loading
                 ? ""
-                : this.displayDirectoryContents(context.files)
+                : this.displayFolderContents(context.state.files)
             }
           </FilesContext.Consumer>
         </ul>
@@ -102,10 +125,22 @@ class Files extends Component {
   }
 }
 
-const Search = () => (
-  <div className="search">
-    <input className="form-control" type="text" placeholder="SEARCH" />
-  </div>
+const Breadcrumb = () => (
+  <ol className="breadcrumb">
+    <li className="breadcrumb-item">{""}</li>
+    <PathContext.Consumer>
+      {context =>
+        context.path.map(
+          (item, index) =>
+            index === context.path.length - 1 ? (
+              <li className="breadcrumb-item">{item}</li>
+            ) : (
+              <li className="breadcrumb-item active">{item}</li>
+            )
+        )
+      }
+    </PathContext.Consumer>
+  </ol>
 );
 
 const Empty = () => (
@@ -114,32 +149,5 @@ const Empty = () => (
     <div>Empty</div>
   </div>
 );
-
-const setIcon = fileType => {
-  let icon = "/assets/file.png";
-  if (fileType === "directory") {
-    icon = "/assets/folder.png";
-  } else if (fileType === ".js") {
-    icon = "/assets/js.png";
-  } else if (fileType === ".json") {
-    icon = "/assets/json.png";
-  }
-  return icon;
-};
-
-const convertBytes = sizeInBytes => {
-  const kiloBytes = sizeInBytes / Math.pow(2, 10);
-  if (kiloBytes >= 100) {
-    const megaBytes = kiloBytes / Math.pow(2, 10);
-    if (megaBytes >= 100) {
-      const gigaBytes = megaBytes / Math.pow(2, 10);
-      return gigaBytes.toFixed(1) + " GB";
-    } else {
-      return megaBytes.toFixed(1) + " MB";
-    }
-  } else {
-    return kiloBytes.toFixed(1) + " KB";
-  }
-};
 
 export default Files;

@@ -6,7 +6,6 @@ const Login = props => {
     <div className="login">
       <div className="login-heading">
         <img src="/assets/raspberry.png" alt="" />
-        <h2>CLOUD</h2>
       </div>
       <div className="login-form">
         <form className="form-group">

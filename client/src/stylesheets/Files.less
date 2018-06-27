@@ -9,18 +9,25 @@
     padding: 1em;
     display: grid;
     grid-template-columns: 1fr 1fr;
-    align-items: center;
 
     .files-heading-text {
-      color: black;
       font-size: 2rem;
       font-weight: bold;
     }
+    
+    .breadcrumb {
+      background: none;
+      border: 0;
+      padding: 0;
 
-    .search {
-      background-color: white;
-      width: 250px;
-      display: flex;
+      .breadcrumb-item {
+        display: flex;
+        align-items: center;
+        justify-content: center
+      }
+    }
+    
+    .btn-toolbar {
       align-items: center;
       justify-self: right;
     }
@@ -37,7 +44,7 @@
     height: 10%;
     padding: 1em;
     display: grid;
-    grid-template-columns: 72px 1fr 176px 72px 72px;
+    grid-template-columns: 56px 1fr 176px 56px 48px;
     grid-column-gap: 2em;
     align-items: center;
   }
@@ -48,35 +55,34 @@
 
   .list-group-item {
     &:hover {
-      background-color: whitesmoke;
       cursor: pointer;
     }
 
+    .item-name {
+      overflow-x: hidden;
+    }
+    
     .item-size {
       text-align: right;
     }
 
-    img {
-      width: 24px;
-      height: 24px;
-      justify-self: center;
-    }
-    
     .dropdown {
       position: relative;
-
-      .dropdown-button {
-
-      }
+      float: right;
 
       .dropdown-panel {
+        background-color: white;
+        color: #333333;
+        width: 150px;
         position: absolute;
+        top: 100%;
         right: 0;
         z-index: 10;
 
         &#visible {
           display: visible;
         }
+
         &#hidden {
           display: none;
         }
@@ -84,8 +90,13 @@
     }
   }
 
+  img {
+    width: 20px;
+    height: 20px;
+    justify-self: center;
+  }
+
   .folder-empty {
-    font-weight: bold;
     width: 100%;
     height: 100%;
     display: flex;
@@ -100,7 +111,7 @@
     }
   }
 
-  button {
+  .btn {
     display: flex;
     justify-content: center;
   }

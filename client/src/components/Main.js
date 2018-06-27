@@ -13,33 +13,52 @@ class Main extends Component {
   };
 
   componentDidMount() {
+    this.fetchDirectoryMap();
+  }
+
+  fetchDirectoryMap = async () => {
     try {
-      this.fetchDirectoryMap().then(map => {
-        this.setState({
-          files: map.files,
-          used: map.size,
-          loading: false
-        });
+      const response = await fetch("/api/files");
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw Error(response.statusText);
+      }
+
+      this.setState({
+        files: data.files,
+        used: data.size,
+        loading: false
       });
     } catch (error) {
       console.log(error);
     }
-  }
+  };
 
-  fetchDirectoryMap = async () => {
-    const response = await fetch("/api/files");
-    const body = await response.json();
-
-    if (!response.ok) {
-      throw Error(response.statusText);
+  convertBytes = sizeInBytes => {
+    const kiloBytes = sizeInBytes / Math.pow(2, 10);
+    if (kiloBytes >= 100) {
+      const megaBytes = kiloBytes / Math.pow(2, 10);
+      if (megaBytes >= 100) {
+        const gigaBytes = megaBytes / Math.pow(2, 10);
+        return gigaBytes.toFixed(1) + " GB";
+      } else {
+        return megaBytes.toFixed(1) + " MB";
+      }
+    } else {
+      return kiloBytes.toFixed(1) + " KB";
     }
-    return body;
   };
 
   render() {
     return (
       <div className="content">
-        <FilesContext.Provider value={this.state}>
+        <FilesContext.Provider
+          value={{
+            state: this.state,
+            convertBytes: this.convertBytes
+          }}
+        >
           <Panel handleClick={this.props.handleClick} />
           <div className="content-wrapper">
             <Files />

@@ -25,20 +25,23 @@ const Panel = props => {
 
 const Storage = () => (
   <div className="progress-wrapper">
-    <div className="progress">
-      <FilesContext.Consumer>
-        {context => {
-          if (context.loading) return;
-          const style = {
-            width: (context.totalSize / Math.pow(2, 40)) * 100 + "%"
-          };
-          return (
-            <div className="progress-bar" role="progressbar" style={style} />
-          );
-        }}
-      </FilesContext.Consumer>
-    </div>
-    <div>0 OF 1TB USED</div>
+    <FilesContext.Consumer>
+      {context => {
+        if (context.state.loading) return;
+        const style = {
+          width: (context.state.used / Math.pow(2, 40)) * 100 + "%"
+        };
+        
+        return (
+          <React.Fragment>
+            <div className="progress">
+              <div className="progress-bar" role="progressbar" style={style} />
+            </div>
+            <div>{context.convertBytes(context.state.used)} OF 1 TB USED</div>
+          </React.Fragment>
+        );
+      }}
+    </FilesContext.Consumer>
   </div>
 );
 

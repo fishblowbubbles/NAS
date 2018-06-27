@@ -3,17 +3,14 @@ const bodyParser = require("body-parser");
 const path = require("path");
 const fs = require("fs");
 
-const app = express();
-const port = process.env.PORT || 5000;
-
-traverseDirectory = directory => {
+traverseDirectory = folder => {
   let data = {
     files: [],
     size: 0
   };
 
-  fs.readdirSync(directory).forEach(fileName => {
-    let filePath = path.resolve(directory, fileName);
+  fs.readdirSync(folder).forEach(fileName => {
+    let filePath = path.resolve(folder, fileName);
     let fileJson = { name: fileName };
 
     let stats = fs.statSync(filePath);
@@ -21,7 +18,7 @@ traverseDirectory = directory => {
       const contents = traverseDirectory(filePath);
       fileJson.contents = contents.files;
       fileJson.size = contents.size;
-      fileJson.type = "directory";
+      fileJson.type = "folder";
     } else {
       fileJson.type = path.extname(fileName);
       fileJson.mtime = stats.mtimeMs;
@@ -35,21 +32,32 @@ traverseDirectory = directory => {
   return data;
 };
 
+const port = process.env.PORT || 5000;
+const app = express();
+
 let root = traverseDirectory("../");
 
-app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, "../client/build")));
+app.use(bodyParser.json());
 
 app.get("/", (request, response) => {
-  response.sendFile(path.join(__dirname, "../client/build", "index.html"))
-})
+  response.sendFile(path.join(__dirname, "../client/build", "index.html"));
+});
 
 app.get("/api/files", (request, response) => {
   response.send(root);
 });
 
 app.post("/api/download", (request, response) => {
-  const path = request.body;
+  response.sendFile(path.join(__dirname, "/" + request.body.join("/")));
+});
+
+app.post("/api/rename", (request, response) => {
+  console.log(request);
+});
+
+app.post("/api/delete", (request, response) => {
+  console.log(request);
 });
 
 app.listen(port, () => {
