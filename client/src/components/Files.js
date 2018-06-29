@@ -101,7 +101,9 @@ class Files extends Component {
 class Item extends Component {
   state = {
     panelOpen: false,
-    inputOpen: false
+    inputOpen: false,
+    previewOpen: false,
+    contents: ""
   };
 
   componentDidUpdate(prevProps, prevState) {
@@ -122,6 +124,12 @@ class Item extends Component {
     });
   };
 
+  togglePreview = () => {
+    this.setState({
+      previewOpen: !this.state.previewOpen
+    });
+  };
+
   setOutsideClickListener = (isOpen, callback) => {
     if (isOpen) {
       document.removeEventListener("click", callback);
@@ -137,8 +145,9 @@ class Item extends Component {
 
   handlePreviewClick = e => {
     e.stopPropagation();
-    this.fetchFileData();
     this.togglePanel();
+    this.togglePreview();
+    this.fetchFileData();
   };
 
   handleDownloadClick = e => {
@@ -150,7 +159,7 @@ class Item extends Component {
   handleRenameClick = e => {
     e.stopPropagation();
     this.togglePanel(); // close panel
-    this.toggleInput(); // open modal
+    this.toggleInput(); // open input
   };
 
   handleRenameSubmit = e => {
@@ -183,9 +192,7 @@ class Item extends Component {
     return <img src={src} />;
   };
 
-  openPreviewPanel = () => <div />;
-
-  openRenameInput = () => (
+  showInputBox = () => (
     <FilesContext.Consumer>
       {context => (
         <input
@@ -200,7 +207,7 @@ class Item extends Component {
     </FilesContext.Consumer>
   );
 
-  openDeleteModal = () => <div />;
+  toggleModal = () => <div />;
 
   fetchFileData = () => {
     const options = {
@@ -212,9 +219,12 @@ class Item extends Component {
       body: JSON.stringify(this.props.path)
     };
 
-    this.sendPostRequest("/api/download", options).then(data =>
-      console.log(data)
-    );
+    this.sendPostRequest("/api/download", options).then(body => {
+      console.log(body);
+      this.setState({
+        contents: body
+      });
+    });
   };
 
   changeFileName = name => {
@@ -230,8 +240,8 @@ class Item extends Component {
       })
     };
 
-    this.sendPostRequest("/api/rename", options).then(status => {
-      console.log(status);
+    this.sendPostRequest("/api/rename", options).then(body => {
+      console.log(body);
     });
   };
 
@@ -245,8 +255,8 @@ class Item extends Component {
       body: JSON.stringify(this.props.path)
     };
 
-    this.sendPostRequest("/api/delete", options).then(status =>
-      console.log(status)
+    this.sendPostRequest("/api/delete", options).then(body =>
+      console.log(body)
     );
   };
 
@@ -257,6 +267,8 @@ class Item extends Component {
 
       if (!response.ok) {
         throw Error(response.statusText);
+      } else {
+        return data;
       }
     } catch (error) {
       console.log(error);
@@ -265,37 +277,48 @@ class Item extends Component {
 
   render() {
     return (
-      <li
-        className="list-group-item"
-        onClick={
-          this.props.contents
-            ? e => this.props.handleFolderClick(this.props.name)
-            : ""
-        }
-      >
-        {this.setFileIcon(this.props.type)}
-        <div className="item-name">
-          {this.state.inputOpen ? this.openRenameInput() : this.props.name}
+      <React.Fragment>
+        <li
+          className="list-group-item"
+          onClick={
+            this.props.contents
+              ? e => this.props.handleFolderClick(this.props.name)
+              : ""
+          }
+        >
+          {this.setFileIcon(this.props.type)}
+          <div className="item-name">
+            {this.state.inputOpen ? this.showInputBox() : this.props.name}
+          </div>
+          <div className="item-mtime">
+            {this.props.mtime
+              ? new Date(this.props.mtime).toLocaleString()
+              : "-"}
+          </div>
+          <FilesContext.Consumer>
+            {context => (
+              <div className="item-size">
+                {context.convertBytes(this.props.size)}
+              </div>
+            )}
+          </FilesContext.Consumer>
+          <Dropdown
+            panelOpen={this.state.panelOpen}
+            handleMenuClick={this.handleMenuClick}
+            handlePreviewClick={this.handlePreviewClick}
+            handleDownloadClick={this.handleDownloadClick}
+            handleRenameClick={this.handleRenameClick}
+            handleDeleteClick={this.handleDeleteClick}
+          />
+        </li>
+        <div
+          id={this.state.previewOpen ? "visible" : "hidden"}
+          className="preview"
+          name={this.props.name}
+        >
+          {this.state.contents}
         </div>
-        <div className="item-mtime">
-          {this.props.mtime ? new Date(this.props.mtime).toLocaleString() : "-"}
-        </div>
-        <FilesContext.Consumer>
-          {context => (
-            <div className="item-size">
-              {context.convertBytes(this.props.size)}
-            </div>
-          )}
-        </FilesContext.Consumer>
-        <Dropdown
-          panelOpen={this.state.panelOpen}
-          handleMenuClick={this.handleMenuClick}
-          handlePreviewClick={this.handlePreviewClick}
-          handleDownloadClick={this.handleDownloadClick}
-          handleRenameClick={this.handleRenameClick}
-          handleDeleteClick={this.handleDeleteClick}
-        />
-      </li>
+      </React.Fragment>
     );
   }
 }

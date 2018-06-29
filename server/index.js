@@ -33,7 +33,7 @@ traverseDirectory = folder => {
 };
 
 renameFile = (oldPath, newName) => {
-  let folderPath;
+  oldPath = oldPath.split("/");
   if (oldPath.length > 1) {
     folderPath = Array.from(oldPath).slice(0, -1);
     folderPath = folderPath.join("/");
@@ -51,13 +51,34 @@ renameFile = (oldPath, newName) => {
   oldPath = oldPath.join("/");
   newPath = `${folderPath}/${newName}`;
 
-  fs.renameSync(oldPath, newPath)
+  fs.renameSync(oldPath, newPath);
 };
 
-deleteFile = (path) => {
-  path = path.join("/");
+deleteFile = path => {
   fs.rmdirSync(path);
-}
+};
+
+filterRequest = input => {
+  const absolutePath = path.resolve(`${input.join("/")}`);
+  const relativePath = `${__dirname}/${input.join("/")}`;
+
+  console.log("Absolute Path: " + absolutePath);
+  console.log("Relative Path: " + relativePath);
+
+  if (absolutePath !== relativePath) {
+    console.log("Warning: Intruder Alert!");
+  }
+
+  return absolutePath;
+};
+
+getRequestingIP = request => {
+  const ip = request.headers['x-forwarded-for'].split(',').pop() || 
+         request.connection.remoteAddress || 
+         request.socket.remoteAddress || 
+         request.connection.socket.remoteAddress
+  return ip;
+};
 
 const port = process.env.PORT || 5000;
 const app = express();
@@ -76,31 +97,57 @@ app.get("/api/files", (request, response) => {
 });
 
 app.post("/api/download", (request, response) => {
-  response.sendFile(path.join(__dirname, `/${request.body.join("/")}`));
+  console.log("\n --- INCOMING DOWNLOAD REQUEST --- ");
+  console.log("From IP: " + getRequestingIP(request));
+
+  try {
+    const path = filterRequest(request.body);
+    const exists = fs.statSync(path);
+    response.sendFile(path);
+  } catch (error) {
+    response.send("Error occured.");
+  } finally {
+    console.log(" --------- END OF REQUEST --------- \n");
+  }
 });
 
 app.post("/api/rename", (request, response) => {
+  console.log("\n ---- INCOMING RENAME REQUEST ---- ");
+  console.log("IP: " + getRequestingIP(request));
+
   let message;
   try {
-    renameFile(request.body.oldPath, request.body.newName);
+    const path = filterRequest(request.body.oldPath);
+    const exists = fs.statSync(path);
+    renameFile(path, request.body.newName);
     root = traverseDirectory("./");
-    message = "Filename successfully changed!";
+    console.log("Operation completed.");
   } catch (error) {
-    message = error.message;
+    console.log(error.message);
+    message = "Error occured.";
   }
   response.send(message);
+
+  console.log(" --------- END OF REQUEST --------- \n");
 });
 
 app.post("/api/delete", (request, response) => {
+  console.log("\n ---- INCOMING DELETE REQUEST ---- ");
+  console.log("IP: " + request.connection.remoteAddress);
+
   let message;
   try {
-    deleteFile(request.body.path);
+    const path = filterRequest(request.body.path);
+    const exists = fs.statSync(path);
+    deleteFile(path);
     root = traverseDirectory("./");
-    message ="File successfully deleted!";
   } catch (error) {
-    message = error.message;
+    console.log(error.message);
+    message = "Error occured.";
   }
   response.send(message);
+
+  console.log(" --------- END OF REQUEST --------- \n");
 });
 
 app.listen(port, () => {
