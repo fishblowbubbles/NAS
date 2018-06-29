@@ -16,6 +16,21 @@ class Main extends Component {
     this.fetchDirectoryMap();
   }
 
+  componentDidUpdate(nextProps, nextState) {
+    console.log("Loading: " + nextState.loading);
+    if (!nextState.loading) {
+      console.log("GET from database...");
+      this.fetchDirectoryMap();
+    }
+  }
+  
+  refreshPage = () => {
+    console.log("Refreshing page...");
+    this.setState({
+      loading: true
+    });
+  };
+
   fetchDirectoryMap = async () => {
     try {
       const response = await fetch("/api/files");
@@ -56,6 +71,7 @@ class Main extends Component {
         <FilesContext.Provider
           value={{
             state: this.state,
+            refreshPage: this.refreshPage,
             convertBytes: this.convertBytes
           }}
         >

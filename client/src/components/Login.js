@@ -9,26 +9,19 @@ const Login = props => {
       </div>
       <div className="login-form">
         <form className="form-group">
-          <input
-            className="form-control"
-            type="text"
-            name="username"
-            placeholder="Username"
-          />
+          <input className="form-control" type="text" placeholder="Username" />
         </form>
         <form className="form-group">
           <input
             className="form-control"
             type="password"
-            name="password"
             placeholder="Password"
           />
         </form>
-        <br />
-        <button className="btn btn-primary" onClick={props.handleClick}>
-          Login
-        </button>
       </div>
+      <button className="btn btn-primary" onClick={props.handleClick}>
+        Login
+      </button>
     </div>
   );
 };

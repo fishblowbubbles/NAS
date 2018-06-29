@@ -32,11 +32,12 @@ class Toolbar extends Component {
 const Button = props => (
   <button
     type="button"
-    className="btn btn-outline-secondary"
+    className="btn btn-light"
     data-toggle="tooltip"
     onClick={props.handleClick}
   >
     <img src={props.src} />
   </button>
 );
+
 export default Toolbar;

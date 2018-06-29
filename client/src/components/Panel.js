@@ -11,10 +11,10 @@ const Panel = props => {
       </div>
       <ul className="list-group list-group-flush">
         <li className="list-group-item">
-          <h5>FILES</h5>
+          <h5>F I L E S</h5>
         </li>
         <li className="list-group-item">
-          <h5>SETTINGS</h5>
+          <h5>S E T T I N G S</h5>
         </li>
         <Logout />
       </ul>
@@ -37,7 +37,7 @@ const Storage = () => (
             <div className="progress">
               <div className="progress-bar" role="progressbar" style={style} />
             </div>
-            <div>{context.convertBytes(context.state.used)} OF 1 TB USED</div>
+            {/* <div>{context.convertBytes(context.state.used)} OF 1 TB USED</div> */}
           </React.Fragment>
         );
       }}
@@ -49,7 +49,7 @@ const Logout = () => (
   <NavigationContext.Consumer>
     {context => (
       <li className="list-group-item" onClick={context.handleClick}>
-        <h5>LOGOUT</h5>
+        <h5>L O G O U T</h5>
       </li>
     )}
   </NavigationContext.Consumer>
