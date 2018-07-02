@@ -1,6 +1,6 @@
 .files {
-  width: 100%;
-  height: 100vh;
+  min-width: 600px;
+  width: 80vw;
   padding: 2em;
   display: grid;
   grid-template-rows: 96px 72px 1fr;
@@ -15,7 +15,7 @@
       font-size: 2rem;
       font-weight: bold;
     }
-    
+
     .breadcrumb {
       background: none;
       border: 0;
@@ -24,10 +24,10 @@
       .breadcrumb-item {
         display: flex;
         align-items: center;
-        justify-content: center
+        justify-content: center;
       }
     }
-    
+
     .btn-toolbar {
       align-items: center;
       justify-self: right;
@@ -58,9 +58,13 @@
     .item-name {
       overflow-x: hidden;
     }
-    
+
     .item-size {
       text-align: right;
+    }
+
+    .dropdown {
+      justify-self: right;
     }
   }
 
@@ -88,48 +92,5 @@
   .btn {
     display: flex;
     justify-content: center;
-  }
-}
-
-.dropdown {
-  position: relative;
-  float: right;
-
-  .dropdown-panel {
-    background-color: white;
-    color: #333333;
-    width: 150px;
-    position: absolute;
-    top: 0;
-    right: 100%;
-    z-index: 10;
-
-    &#visible {
-      display: visible;
-    }
-
-    &#hidden {
-      display: none;
-    }
-  }
-
-}
-
-.preview {
-  background-color: white;
-  white-space: pre;
-  width: 100vw;
-  height: 100vh;
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 100;
-
-  &#visible {
-    display: visible;
-  }
-
-  &#hidden {
-    display: none;
   }
 }

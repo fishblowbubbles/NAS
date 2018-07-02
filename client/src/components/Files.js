@@ -1,5 +1,6 @@
 import React, { Component } from "react";
 import { FilesContext } from "./Main.js";
+import Item from "./Item.js";
 import Toolbar from "./Toolbar.js";
 import "../stylesheets/Files.less";
 
@@ -8,34 +9,46 @@ class Files extends Component {
     path: []
   };
 
-  handleFolderClick = folder => {
-    this.state.path.push(folder);
-    this.updatePath();
-  };
-
-  handleBackClick = e => {
-    this.state.path.pop();
-    this.updatePath();
-  };
-
-  updatePath = () => {
+  updatePath = newPath => {
     this.setState({
-      path: this.state.path
+      path: newPath
     });
   };
 
+  handleFolderClick = folder => {
+    let newPath = Array.from(this.state.path);
+    newPath.push(folder);
+    this.updatePath(newPath);
+  };
+
+  handleBackClick = e => {
+    let newPath = Array.from(this.state.path);
+    newPath.pop();
+    this.updatePath(newPath);
+  };
+
   displayFolderContents = files => {
-    const folder =
-      this.state.path.length === 0 ? files : this.getContentsFromPath(files, 0);
-    return folder.length > 0 ? this.createListItems(folder) : <Empty />;
+    let folder = files;
+    if (this.state.path.length > 0) {
+      folder = this.getContentsFromPath(files, 0);
+    }
+
+    if (folder.length > 0) {
+      return this.createListItems(folder);
+    } else {
+      return <Empty />;
+    }
   };
 
   getContentsFromPath = (folder, depth) => {
     for (let i = 0; i < folder.length; i += 1) {
       if (folder[i].name === this.state.path[depth]) {
-        return depth === this.state.path.length - 1
-          ? folder[i].contents
-          : this.getContentsFromPath(folder[i].contents, (depth += 1));
+        if (depth !== this.state.path.length - 1) {
+          return this.getContentsFromPath(folder[i].contents, 
+              (depth += 1));
+        } else {
+          return folder[i].contents;
+        }
       }
     }
   };
@@ -58,7 +71,7 @@ class Files extends Component {
       );
     });
 
-  setNavIcon = () =>
+  setNavigationIcon = () =>
     this.state.path.length > 0 ? (
       <button className="btn btn-light" onClick={this.handleBackClick}>
         <img src="/assets/back.png" />
@@ -78,7 +91,7 @@ class Files extends Component {
           <Toolbar />
         </div>
         <li className="list-group-heading">
-          {this.setNavIcon()}
+          {this.setNavigationIcon()}
           <div>Name</div>
           <div>Modified</div>
           <div>Size</div>
@@ -97,257 +110,6 @@ class Files extends Component {
     );
   }
 }
-
-class Item extends Component {
-  state = {
-    panelOpen: false,
-    inputOpen: false,
-    previewOpen: false,
-    contents: ""
-  };
-
-  componentDidUpdate(prevProps, prevState) {
-    if (this.input) this.input.focus();
-  }
-
-  togglePanel = () => {
-    this.setOutsideClickListener(this.state.panelOpen, this.togglePanel);
-    this.setState({
-      panelOpen: !this.state.panelOpen
-    });
-  };
-
-  toggleInput = () => {
-    this.setOutsideClickListener(this.state.inputOpen, this.toggleInput);
-    this.setState({
-      inputOpen: !this.state.inputOpen
-    });
-  };
-
-  togglePreview = () => {
-    this.setState({
-      previewOpen: !this.state.previewOpen
-    });
-  };
-
-  setOutsideClickListener = (isOpen, callback) => {
-    if (isOpen) {
-      document.removeEventListener("click", callback);
-    } else {
-      document.addEventListener("click", callback);
-    }
-  };
-
-  handleMenuClick = e => {
-    e.stopPropagation();
-    this.togglePanel();
-  };
-
-  handlePreviewClick = e => {
-    e.stopPropagation();
-    this.togglePanel();
-    this.togglePreview();
-    this.fetchFileData();
-  };
-
-  handleDownloadClick = e => {
-    e.stopPropagation();
-    this.togglePanel();
-    this.fetchFileData();
-  };
-
-  handleRenameClick = e => {
-    e.stopPropagation();
-    this.togglePanel(); // close panel
-    this.toggleInput(); // open input
-  };
-
-  handleRenameSubmit = e => {
-    e.preventDefault();
-    this.toggleInput();
-    this.changeFileName(e.target.value);
-  };
-
-  handleDeleteClick = e => {
-    this.togglePanel();
-  };
-
-  handleKeyPress = (e, callback) => {
-    if (e.key === "Enter") {
-      const status = this.handleRenameSubmit(e);
-      e.target.value = "";
-      callback();
-    }
-  };
-
-  setFileIcon = type => {
-    let src = "/assets/file.png";
-    if (type === "folder") {
-      src = "/assets/folder.png";
-    } else if (type === ".js") {
-      src = "/assets/js.png";
-    } else if (type === ".json") {
-      src = "/assets/json.png";
-    }
-    return <img src={src} />;
-  };
-
-  showInputBox = () => (
-    <FilesContext.Consumer>
-      {context => (
-        <input
-          className="form-control"
-          ref={c => (this.input = c)}
-          type="text"
-          placeholder={this.props.path[this.props.path.length - 1]}
-          onClick={e => e.stopPropagation()}
-          onKeyPress={e => this.handleKeyPress(e, context.refreshPage)}
-        />
-      )}
-    </FilesContext.Consumer>
-  );
-
-  toggleModal = () => <div />;
-
-  fetchFileData = () => {
-    const options = {
-      method: "POST",
-      headers: {
-        Accept: "text/plain",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(this.props.path)
-    };
-
-    this.sendPostRequest("/api/download", options).then(body => {
-      console.log(body);
-      this.setState({
-        contents: body
-      });
-    });
-  };
-
-  changeFileName = name => {
-    const options = {
-      method: "POST",
-      headers: {
-        Accept: "text/plain",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        oldPath: this.props.path,
-        newName: name
-      })
-    };
-
-    this.sendPostRequest("/api/rename", options).then(body => {
-      console.log(body);
-    });
-  };
-
-  deleteFile = path => {
-    const options = {
-      method: "POST",
-      headers: {
-        Accept: "text/plain",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(this.props.path)
-    };
-
-    this.sendPostRequest("/api/delete", options).then(body =>
-      console.log(body)
-    );
-  };
-
-  sendPostRequest = async (request, options) => {
-    try {
-      const response = await fetch(request, options);
-      const data = await response.text();
-
-      if (!response.ok) {
-        throw Error(response.statusText);
-      } else {
-        return data;
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  render() {
-    return (
-      <React.Fragment>
-        <li
-          className="list-group-item"
-          onClick={
-            this.props.contents
-              ? e => this.props.handleFolderClick(this.props.name)
-              : ""
-          }
-        >
-          {this.setFileIcon(this.props.type)}
-          <div className="item-name">
-            {this.state.inputOpen ? this.showInputBox() : this.props.name}
-          </div>
-          <div className="item-mtime">
-            {this.props.mtime
-              ? new Date(this.props.mtime).toLocaleString()
-              : "-"}
-          </div>
-          <FilesContext.Consumer>
-            {context => (
-              <div className="item-size">
-                {context.convertBytes(this.props.size)}
-              </div>
-            )}
-          </FilesContext.Consumer>
-          <Dropdown
-            panelOpen={this.state.panelOpen}
-            handleMenuClick={this.handleMenuClick}
-            handlePreviewClick={this.handlePreviewClick}
-            handleDownloadClick={this.handleDownloadClick}
-            handleRenameClick={this.handleRenameClick}
-            handleDeleteClick={this.handleDeleteClick}
-          />
-        </li>
-        <div
-          id={this.state.previewOpen ? "visible" : "hidden"}
-          className="preview"
-          name={this.props.name}
-        >
-          {this.state.contents}
-        </div>
-      </React.Fragment>
-    );
-  }
-}
-
-const Dropdown = props => (
-  <div className="dropdown">
-    <button
-      className="btn btn-light dropdown-button"
-      onClick={props.handleMenuClick}
-    >
-      . . .
-    </button>
-    <div
-      id={props.panelOpen ? "visible" : "hidden"}
-      className="dropdown-panel btn-group-vertical"
-    >
-      <DropdownButton text="Preview" handleClick={props.handlePreviewClick} />
-      <DropdownButton text="Download" handleClick={props.handleDownloadClick} />
-      <DropdownButton text="Rename" handleClick={props.handleRenameClick} />
-      <DropdownButton text="Delete" handleClick={props.handleDeleteClick} />
-    </div>
-  </div>
-);
-
-const DropdownButton = props => (
-  <button className="btn btn-light btn-block" onClick={props.handleClick}>
-    {props.text}
-  </button>
-);
 
 const Breadcrumb = props => (
   <ol className="breadcrumb">

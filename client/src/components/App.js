@@ -1,4 +1,5 @@
 import React, { Component } from "react";
+import { Switch, Route, withRouter } from "react-router-dom";
 import Login from "./Login.js";
 import Main from "./Main.js";
 import "../stylesheets/App.css";
@@ -10,31 +11,16 @@ class App extends Component {
     login: false
   };
 
-  handleLogin = e => {
-    this.setState({
-      login: true
-    });
-  };
-
-  handleLogout = e => {
-    this.setState({
-      login: false
-    });
-  };
-
   render() {
     return (
-      <React.Fragment>
-        {this.state.login ? (
-          <NavigationContext.Provider value={{ handleClick: this.handleLogout}}>
-            <Main />
-          </NavigationContext.Provider>
-        ) : (
-          <Login handleClick={this.handleLogin} />
-        )}
-      </React.Fragment>
+      <Switch>
+        <NavigationContext.Provider value={{ handleClick: this.handleLogout }}>
+          <Route exact path="/" component={Login} />
+          <Route exact path="/main" component={Main} />
+        </NavigationContext.Provider>
+      </Switch>
     );
   }
 }
 
-export default App;
+export default withRouter(App);

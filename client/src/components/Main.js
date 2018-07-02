@@ -17,15 +17,12 @@ class Main extends Component {
   }
 
   componentDidUpdate(nextProps, nextState) {
-    console.log("Loading: " + nextState.loading);
     if (!nextState.loading) {
-      console.log("GET from database...");
       this.fetchDirectoryMap();
     }
   }
-  
+
   refreshPage = () => {
-    console.log("Refreshing page...");
     this.setState({
       loading: true
     });
@@ -33,7 +30,16 @@ class Main extends Component {
 
   fetchDirectoryMap = async () => {
     try {
-      const response = await fetch("/api/files");
+      const options = {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ username: "username" })
+      };
+
+      const response = await fetch("/api/files", options);
       const data = await response.json();
 
       if (!response.ok) {
@@ -75,10 +81,8 @@ class Main extends Component {
             convertBytes: this.convertBytes
           }}
         >
-          <Panel handleClick={this.props.handleClick} />
-          <div className="content-wrapper">
-            <Files />
-          </div>
+          <Panel history={this.props.history} handleClick={this.props.handleClick} />
+          <Files />
         </FilesContext.Provider>
       </div>
     );
