@@ -3,6 +3,8 @@ import FileSaver from "file-saver";
 import { FilesContext } from "./Main.js";
 import Dropdown from "./Dropdown.js";
 
+import { download, rename, remove } from "../api/files.js";
+
 class Item extends Component {
   state = {
     panelOpen: false,
@@ -20,15 +22,13 @@ class Item extends Component {
     this.setState({
       panelOpen: !this.state.panelOpen
     });
-    e.stopPropagation();
   };
 
-  toggleInput = e => {
+  toggleInput = () => {
     this.setOutsideClickListener(this.state.inputOpen, this.toggleInput);
     this.setState({
       inputOpen: !this.state.inputOpen
     });
-    e.stopPropagation();
   };
 
   setOutsideClickListener = (isOpen, callback) => {
@@ -40,38 +40,47 @@ class Item extends Component {
   };
 
   handleMenuClick = e => {
-    this.togglePanel(e);
+    e.stopPropagation();
+    this.togglePanel();
   };
 
   handlePreviewClick = e => {
+    e.stopPropagation();
     this.togglePanel(e);
   };
 
   handleDownloadClick = e => {
-    this.togglePanel(e);
-    this.downloadFile();
+    e.stopPropagation();
+    this.togglePanel();
+
+    const file = download(this.props.path);
+    FileSaver.saveAs(file);
   };
 
   handleRenameClick = e => {
-    this.togglePanel(e);
-    this.toggleInput(e);
+    e.stopPropagation();
+
+    this.togglePanel();
+    this.toggleInput();
   };
 
   handleDeleteClick = (e, refreshPage) => {
     this.togglePanel(e);
-    this.deleteFile();
-    refreshPage();
-  };
 
-  handleRenameSubmit = e => {
-    this.toggleInput(e);
-    this.renameFile(e.target.value);
+    const status = remove(this.props.path);
+    console.log(status);
+
+    refreshPage();
   };
 
   handleKeyPress = (e, refreshPage) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      this.handleRenameSubmit(e);
+      this.toggleInput();
+
+      const status = rename(this.props.path, e.target.value);
+      console.log(status);
+
       e.target.value = "";
       refreshPage();
     }
@@ -103,71 +112,7 @@ class Item extends Component {
       )}
     </FilesContext.Consumer>
   );
-
-  downloadFile = () => {
-    const options = {
-      method: "POST",
-      headers: {
-        Accept: "text/plain",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(this.props.path)
-    };
-
-    this.sendPostRequest("/api/download", options).then(body => {
-      const fileName = this.props.path[this.props.path.length - 1];
-      FileSaver.saveAs(new File([body], fileName));
-    });
-  };
-
-  renameFile = name => {
-    const options = {
-      method: "POST",
-      headers: {
-        Accept: "text/plain",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        oldPath: this.props.path,
-        newName: name
-      })
-    };
-
-    this.sendPostRequest("/api/rename", options).then(body => {
-      console.log(body);
-    });
-  };
-
-  deleteFile = () => {
-    const options = {
-      method: "POST",
-      headers: {
-        Accept: "text/plain",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(this.props.path)
-    };
-
-    this.sendPostRequest("/api/delete", options).then(body =>
-      console.log(body)
-    );
-  };
-
-  sendPostRequest = async (request, options) => {
-    try {
-      const response = await fetch(request, options);
-      const data = await response.text();
-
-      if (!response.ok) {
-        throw Error(response.statusText);
-      } else {
-        return data;
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
+  
   render() {
     return (
       <div>
