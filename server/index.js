@@ -1,12 +1,13 @@
 const express = require("express");
-const http = require("http");
-const https = require("https");
 const bodyParser = require("body-parser");
 const helmet = require("helmet");
+
+const http = require("http");
+const https = require("https");
 const path = require("path");
 const fs = require("fs");
 
-traverseDirectory = folder => {
+traverse = folder => {
   let data = {
     files: [],
     size: 0
@@ -18,7 +19,7 @@ traverseDirectory = folder => {
 
     let stats = fs.statSync(filePath);
     if (stats.isDirectory()) {
-      const contents = traverseDirectory(filePath);
+      const contents = traverse(filePath);
       fileJson.contents = contents.files;
       fileJson.size = contents.size;
       fileJson.type = "folder";
@@ -35,7 +36,7 @@ traverseDirectory = folder => {
   return data;
 };
 
-renameFile = (oldPath, newName) => {
+rename = (oldPath, newName) => {
   oldPath = oldPath.split("/");
 
   let folderPath = ".";
@@ -56,7 +57,7 @@ renameFile = (oldPath, newName) => {
   fs.renameSync(oldPath, newPath);
 };
 
-deleteFile = path => {
+remove = path => {
   let stats = fs.statSync(path);
   if (stats.isDirectory()) {
     fs.rmdirSync(path);
@@ -65,7 +66,7 @@ deleteFile = path => {
   }
 };
 
-filterRequestPath = input => {
+filter = input => {
   const absolutePath = path.resolve(`${input.join("/")}`);
   const relativePath = `${__dirname}/${input.join("/")}`;
 
@@ -89,15 +90,14 @@ getRequestingIP = request => {
   return ip;
 };
 
-resetRoot = () => {
+refresh = () => {
   return traverseDirectory("./");
 };
 
 const port = process.env.PORT || 5000;
 const app = express();
 
-let root = traverseDirectory("./");
-let users = new Set();
+let root = traverse("./");
 
 /**
  * 1. DO NOT leak errors.
@@ -107,11 +107,6 @@ let users = new Set();
  */
 
 app.use(express.static(path.join(__dirname, "../client/build")));
-app.use(
-  bodyParser.urlencoded({
-    extended: true
-  })
-);
 app.use(bodyParser.json());
 app.use(helmet());
 
@@ -120,73 +115,50 @@ app.get("/", (request, response) => {
 });
 
 app.post("/auth/login", (request, response) => {
-  const username = request.body.username;
-  const password = request.body.password;
-
-  if (username === "username" && password === "password") {
-    response.send("Success");
-    users.add(username);
-  } else {
-    response.send("Failure");
-  }
+  response.send({
+    token: {
+      header: "1234",
+      payload: "abcd",
+      signature: "9876"
+    }
+  });
 });
 
-app.post("/auth/logout", (request, response) => {
-  const username = request.body;
-  users.delete(username);
-
-  if (!users.has(username)) {
-    response.send("Success");
-  } else {
-    response.send("Failure");
-  }
-});
+app.post("/auth/logout", (request, response) => {});
 
 app.post("/api/files", (request, response) => {
-  const username = request.body.username;
-  if (users.has(username)) {
-    response.send(root);
-  }
+  console.log(`Token: ${JSON.stringify(request.body)}`);
+  response.send(root);
 });
 
 app.post("/api/download", (request, response) => {
   try {
-    console.log(`\nDownload request from IP: ${getRequestingIP(request)}`);
-    const path = filterRequestPath(request.body);
-    const fileName = request.body[request.body.length - 1];
-
-    response.download(path, fileName, error => {
-      if (error) {
-        throw new Error("Could not send file.");
-      }
-    });
+    const path = filter(request.body);
+    response.download(path);
   } catch (error) {
-    console.log(`Error: ${error.message}`);
-    response.send("Error occured.");
+    response.status(500);
   }
 });
 
 app.post("/api/rename", (request, response) => {
   try {
-    console.log(`\nRename request from IP: ${getRequestingIP(request)}`);
-    const absolutePath = filterRequestPath(request.body.oldPath);
-    renameFile(absolutePath, request.body.newName);
-    root = resetRoot();
+    const absolutePath = filter(request.body.oldPath);
+    rename(absolutePath, request.body.newName);
+    response.send("Filename successfully changed.");
+    root = reset();
   } catch (error) {
-    console.log(`Error: ${error.message}`);
-    response.send("Error occured.");
+    response.status(500);
   }
 });
 
 app.post("/api/delete", (request, response) => {
   try {
-    console.log(`\nDelete request from IP: ${getRequestingIP(request)}`);
-    const absolutePath = filterRequestPath(request.body);
-    deleteFile(absolutePath);
-    root = resetRoot();
+    const absolutePath = filter(request.body);
+    delete(absolutePath);
+    response.send("File successfully deleted.");
+    root = reset();
   } catch (error) {
-    console.log(`Error: ${error.message}`);
-    response.send("Error occurred.");
+    response.status(500);
   }
 });
 

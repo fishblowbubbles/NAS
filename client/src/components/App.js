@@ -14,7 +14,7 @@ class App extends Component {
   render() {
     return (
       <Switch>
-        <NavigationContext.Provider value={{ handleClick: this.handleLogout }}>
+        <NavigationContext.Provider value={{handleClick: this.handleLogout}}>
           <Route exact path="/" component={Login} />
           <Route exact path="/main" component={Main} />
         </NavigationContext.Provider>

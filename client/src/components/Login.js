@@ -1,45 +1,30 @@
 import React, { Component } from "react";
+import { login, logout } from "../api/login.js";
 import "../stylesheets/Login.less";
 
 class Login extends Component {
-  sendLoginRequest = async () => {
-    const options = {
-      method: "POST",
-      headers: {
-        Accept: "text/plain",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        username: document.getElementById("username").value,
-        password: document.getElementById("password").value
-      })
-    };
-
-    try {
-      const response = await fetch("/auth/login", options);
-      const data = await response.text();
-
-      if (!response.ok) {
-        throw Error(response.statusText);
-      } 
-
-      if (data === "Success") {
-        this.props.history.push("/main");
-      } else {
-        document.getElementById("username").focus();
-        console.log("Invalid credentials.");
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
   handleKeyPress = e => {
     if (e.key === "Enter") {
       e.preventDefault();
-      this.sendLoginRequest();
+      this.handleSubmit();
     }
   };
+
+  handleSubmit = e => {
+    const credentials = {
+      username: document.getElementById("username").value,
+      password: document.getElementById("password").value
+    }
+
+    login(credentials, this.onResponse);
+  }
+
+  onResponse = data => {
+    console.log(`Token: ${JSON.stringify(data)}`)
+    if (data.token) {
+      this.props.history.push("/main");
+    }
+  }
 
   render() {
     document.addEventListener("keypress", this.handleKeyPress);
@@ -67,7 +52,7 @@ class Login extends Component {
             />
           </form>
         </div>
-        <button id="submit" className="btn btn-primary" onClick={this.sendLoginCredentials}>
+        <button id="submit" className="btn btn-primary" onClick={this.handleSubmit}>
           L O G I N
         </button>
       </div>

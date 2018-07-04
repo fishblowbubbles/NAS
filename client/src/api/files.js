@@ -1,71 +1,64 @@
+const fileSaver = require("file-saver");
+
 function options(data) {
   return {
     method: "POST",
     headers: {
-      Accept: "application/json",
       "Content-Type": "application/json"
     },
     body: JSON.stringify(data)
   };
-};
+}
 
-async function dispatch(request, options) {
+async function send(request, options, type) {
   const response = await fetch(request, options);
-  const data = await response.json();
-
+  const data = await eval(`response.${type}()`);
+  
   if (!response.ok) {
     throw Error(response.statusText);
   }
   return data;
-};
+}
+
+export function root(token, callback) { 
+  send("/api/files", options(token), "json")
+    .then(data => callback(data))
+    .catch(error => console.log(error));
+}
 
 export function download(path) {
   const filename = path[path.length - 1];
 
   let file;
-  function set(data) {
+  function save(data) {
     file = new File([data], filename);
-  };
+    fileSaver.saveAs(file);
+  }
 
-  dispatch("/api/download", options(path))
-    .then(data => set(data.contents))
+  send("/api/download", options(path), "text")
+    .then(data => {
+      save(data);
+    })
     .catch(error => console.log(error));
+}
 
-  return file;
-};
-
-export function rename(path, name) {
-  let status;
-  function set(data) {
-      status = data;
-    };
-
+export function rename(path, name, callback) {
   const body = {
     oldPath: path,
     newName: name
   };
 
-  dispatch("/api/rename", options(body))
+  send("/api/rename", options(body), "text")
     .then(data => {
-      set(data);
+      callback(data);
     })
     .catch(error => {
       console.log(error);
     });
+}
 
-  return status;
-};
-
-
-export function remove(path) {
-  let status;
-  function set(data) {
-    status = data;
-  };
-
-  dispatch("/api/delete", options(path))
-    .then(data => set(data))
+export function remove(path, callback) {
+  send("/api/delete", options(path), "text")
+    .then(data => callback(data))
     .catch(error => console.log(error));
-
-  return status;
-};
+}

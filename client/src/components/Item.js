@@ -1,8 +1,6 @@
 import React, { Component } from "react";
-import FileSaver from "file-saver";
-import { FilesContext } from "./Main.js";
 import Dropdown from "./Dropdown.js";
-
+import { FilesContext } from "./Main.js";
 import { download, rename, remove } from "../api/files.js";
 
 class Item extends Component {
@@ -17,7 +15,7 @@ class Item extends Component {
     }
   }
 
-  togglePanel = e => {
+  togglePanel = () => {
     this.setOutsideClickListener(this.state.panelOpen, this.togglePanel);
     this.setState({
       panelOpen: !this.state.panelOpen
@@ -52,39 +50,33 @@ class Item extends Component {
   handleDownloadClick = e => {
     e.stopPropagation();
     this.togglePanel();
-
-    const file = download(this.props.path);
-    FileSaver.saveAs(file);
+    download(this.props.path);
   };
 
   handleRenameClick = e => {
     e.stopPropagation();
-
     this.togglePanel();
     this.toggleInput();
   };
 
   handleDeleteClick = (e, refreshPage) => {
-    this.togglePanel(e);
-
-    const status = remove(this.props.path);
-    console.log(status);
-
+    this.togglePanel();
+    remove(this.props.path, this.onResponse);
     refreshPage();
   };
 
   handleKeyPress = (e, refreshPage) => {
     if (e.key === "Enter") {
-      e.preventDefault();
       this.toggleInput();
-
-      const status = rename(this.props.path, e.target.value);
-      console.log(status);
-
+      rename(this.props.path, e.target.value, this.onResponse);
       e.target.value = "";
       refreshPage();
     }
   };
+
+  onResponse = data => {
+    console.log(data);
+  }
 
   setFileIcon = type => {
     let src = "/assets/file.png";
@@ -112,7 +104,7 @@ class Item extends Component {
       )}
     </FilesContext.Consumer>
   );
-  
+
   render() {
     return (
       <div>

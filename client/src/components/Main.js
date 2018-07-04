@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 import Panel from "./Panel.js";
 import Files from "./Files.js";
+import { root } from "../api/files.js";
 import "../stylesheets/Main.less";
 
 export const FilesContext = React.createContext();
@@ -9,16 +10,21 @@ class Main extends Component {
   state = {
     files: [],
     used: 0,
-    loading: true
+    loading: true,
+    token: {
+      header: "1234",
+      payload: "5678",
+      signature: "abcd"
+    }
   };
 
   componentDidMount() {
-    this.fetchDirectoryMap();
+    this.fetchRoot();
   }
 
   componentDidUpdate(nextProps, nextState) {
     if (!nextState.loading) {
-      this.fetchDirectoryMap();
+      this.fetchRoot();
     }
   }
 
@@ -28,32 +34,16 @@ class Main extends Component {
     });
   };
 
-  fetchDirectoryMap = async () => {
-    try {
-      const options = {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ username: "username" })
-      };
+  fetchRoot = () => {
+    root(this.state.token, this.onResponse);
+  }
 
-      const response = await fetch("/api/files", options);
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw Error(response.statusText);
-      }
-
-      this.setState({
-        files: data.files,
-        used: data.size,
-        loading: false
-      });
-    } catch (error) {
-      console.log(error);
-    }
+  onResponse = data => {
+    this.setState({
+      files: data.files,
+      used: data.size,
+      loading: false
+    });
   };
 
   convertBytes = sizeInBytes => {
@@ -81,7 +71,10 @@ class Main extends Component {
             convertBytes: this.convertBytes
           }}
         >
-          <Panel history={this.props.history} handleClick={this.props.handleClick} />
+          <Panel
+            history={this.props.history}
+            handleClick={this.props.handleClick}
+          />
           <Files />
         </FilesContext.Provider>
       </div>
