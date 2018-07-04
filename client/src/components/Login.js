@@ -20,7 +20,6 @@ class Login extends Component {
   }
 
   onResponse = data => {
-    console.log(`Token: ${JSON.stringify(data)}`)
     if (data.token) {
       this.props.history.push("/main");
     }

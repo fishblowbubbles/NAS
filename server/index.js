@@ -96,6 +96,7 @@ const port = process.env.PORT || 5000;
 const app = express();
 
 let root = traverse("./");
+let sessions = new Set();
 
 /**
  * 1. DO NOT leak errors.
@@ -112,16 +113,12 @@ app.get("/", (request, response) => {
 });
 
 app.post("/auth/login", (request, response) => {
-  response.send({
-    token: {
-      header: "1234",
-      payload: "abcd",
-      signature: "9876"
-    }
-  });
+  // issue token
 });
 
-app.post("/auth/logout", (request, response) => {});
+app.post("/auth/logout", (request, response) => {
+  // remove token
+});
 
 app.post("/api/files", (request, response) => {
   // console.log(`Token: ${JSON.stringify(request.body)}`);
@@ -151,7 +148,7 @@ app.post("/api/rename", (request, response) => {
 app.post("/api/delete", (request, response) => {
   try {
     const path = filter(request.body);
-    delete(path);
+    delete path;
     response.send("File successfully deleted.");
     root = reset();
   } catch (error) {

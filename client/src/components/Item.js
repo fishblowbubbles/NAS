@@ -2,11 +2,12 @@ import React, { Component } from "react";
 import Dropdown from "./Dropdown.js";
 import { FilesContext } from "./Main.js";
 import { download, rename, remove } from "../api/files.js";
+import { convertBytes, setIcon } from "../api/commons.js";
 
 class Item extends Component {
   state = {
-    panelOpen: false,
-    inputOpen: false
+    panel: false,
+    input: false
   };
 
   componentDidUpdate(prevProps, prevState) {
@@ -16,21 +17,21 @@ class Item extends Component {
   }
 
   togglePanel = () => {
-    this.setOutsideClickListener(this.state.panelOpen, this.togglePanel);
+    this.toggleClickListener(this.state.panel, this.togglePanel);
     this.setState({
-      panelOpen: !this.state.panelOpen
+      panel: !this.state.panel
     });
   };
 
   toggleInput = () => {
-    this.setOutsideClickListener(this.state.inputOpen, this.toggleInput);
+    this.toggleClickListener(this.state.input, this.toggleInput);
     this.setState({
-      inputOpen: !this.state.inputOpen
+      input: !this.state.input
     });
   };
 
-  setOutsideClickListener = (isOpen, callback) => {
-    if (isOpen) {
+  toggleClickListener = (open, callback) => {
+    if (open) {
       document.removeEventListener("click", callback);
     } else {
       document.addEventListener("click", callback);
@@ -59,35 +60,23 @@ class Item extends Component {
     this.toggleInput();
   };
 
-  handleDeleteClick = (e, refreshPage) => {
+  handleDeleteClick = (e, refresh) => {
     this.togglePanel();
     remove(this.props.path, this.onResponse);
-    refreshPage();
+    refresh();
   };
 
-  handleKeyPress = (e, refreshPage) => {
+  handleKeyPress = (e, refresh) => {
     if (e.key === "Enter") {
       this.toggleInput();
       rename(this.props.path, e.target.value, this.onResponse);
       e.target.value = "";
-      refreshPage();
+      refresh();
     }
   };
 
   onResponse = data => {
     console.log(data);
-  }
-
-  setFileIcon = type => {
-    let src = "/assets/file.png";
-    if (type === "folder") {
-      src = "/assets/folder.png";
-    } else if (type === ".js") {
-      src = "/assets/js.png";
-    } else if (type === ".json") {
-      src = "/assets/json.png";
-    }
-    return <img src={src} />;
   };
 
   showInputBox = () => (
@@ -99,7 +88,7 @@ class Item extends Component {
           type="text"
           placeholder={this.props.path[this.props.path.length - 1]}
           onClick={e => e.stopPropagation()}
-          onKeyPress={e => this.handleKeyPress(e, context.refreshPage)}
+          onKeyPress={e => this.handleKeyPress(e, context.refresh)}
         />
       )}
     </FilesContext.Consumer>
@@ -116,26 +105,23 @@ class Item extends Component {
               : e => e.stopPropagation()
           }
         >
-          {this.setFileIcon(this.props.type)}
+          <img src={setIcon(this.props.type)} />
+
           <div className="item-name">
-            {this.state.inputOpen ? this.showInputBox() : this.props.name}
+            {this.state.input ? this.showInputBox() : this.props.name}
           </div>
           <div className="item-mtime">
             {this.props.mtime
               ? new Date(this.props.mtime).toLocaleString()
               : "-"}
           </div>
-          <FilesContext.Consumer>
-            {context => (
-              <div className="item-size">
-                {context.convertBytes(this.props.size)}
-              </div>
-            )}
-          </FilesContext.Consumer>
+
+          <div className="item-size">{convertBytes(this.props.size)}</div>
+
           <FilesContext.Consumer>
             {context => (
               <Dropdown
-                panelOpen={this.state.panelOpen}
+                panel={this.state.panel}
                 handleMenuClick={this.handleMenuClick}
                 handlePreviewClick={this.handlePreviewClick}
                 handleDownloadClick={this.handleDownloadClick}

@@ -1,24 +1,5 @@
+const { options, send } = require("./commons.js");
 const fileSaver = require("file-saver");
-
-function options(data) {
-  return {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(data)
-  };
-}
-
-async function send(request, options, type) {
-  const response = await fetch(request, options);
-  const data = await eval(`response.${type}()`);
-  
-  if (!response.ok) {
-    throw Error(response.statusText);
-  }
-  return data;
-}
 
 export function root(token, callback) { 
   send("/api/files", options(token), "json")

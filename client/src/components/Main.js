@@ -2,6 +2,7 @@ import React, { Component } from "react";
 import Panel from "./Panel.js";
 import Files from "./Files.js";
 import { root } from "../api/files.js";
+import { convertBytes } from "../api/commons.js";
 import "../stylesheets/Main.less";
 
 export const FilesContext = React.createContext();
@@ -11,32 +12,23 @@ class Main extends Component {
     files: [],
     used: 0,
     loading: true,
-    token: {
-      header: "1234",
-      payload: "5678",
-      signature: "abcd"
-    }
   };
 
   componentDidMount() {
-    this.fetchRoot();
+    root(this.state.token, this.onResponse);
   }
 
   componentDidUpdate(nextProps, nextState) {
     if (!nextState.loading) {
-      this.fetchRoot();
+      root(this.state.token, this.onResponse);  
     }
   }
 
-  refreshPage = () => {
+  refresh = () => {
     this.setState({
       loading: true
     });
   };
-
-  fetchRoot = () => {
-    root(this.state.token, this.onResponse);
-  }
 
   onResponse = data => {
     this.setState({
@@ -46,29 +38,13 @@ class Main extends Component {
     });
   };
 
-  convertBytes = sizeInBytes => {
-    const kiloBytes = sizeInBytes / Math.pow(2, 10);
-    if (kiloBytes >= 100) {
-      const megaBytes = kiloBytes / Math.pow(2, 10);
-      if (megaBytes >= 100) {
-        const gigaBytes = megaBytes / Math.pow(2, 10);
-        return gigaBytes.toFixed(1) + " GB";
-      } else {
-        return megaBytes.toFixed(1) + " MB";
-      }
-    } else {
-      return kiloBytes.toFixed(1) + " KB";
-    }
-  };
-
   render() {
     return (
       <div className="content">
         <FilesContext.Provider
           value={{
             state: this.state,
-            refreshPage: this.refreshPage,
-            convertBytes: this.convertBytes
+            refresh: this.refresh,
           }}
         >
           <Panel

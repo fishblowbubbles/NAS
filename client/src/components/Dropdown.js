@@ -10,7 +10,7 @@ const Dropdown = props => (
       . . .
     </button>
     <div
-      id={props.panelOpen ? "visible" : "hidden"}
+      id={props.panel ? "visible" : "hidden"}
       className="dropdown-panel btn-group-vertical"
     >
       <DropdownButton text="Preview" handleClick={props.handlePreviewClick} />
