@@ -36,33 +36,31 @@ traverse = folder => {
   return data;
 };
 
-rename = (oldPath, newName) => {
-  oldPath = oldPath.split("/");
+rename = (path, name) => {
+  path = path.split("/");
 
-  let folderPath = ".";
-  if (oldPath.length > 1) {
-    folderPath = Array.from(oldPath).slice(0, -1);
-    folderPath = folderPath.join("/");
+  let folder = ".";
+  if (path.length > 1) {
+    folder = Array.from(path).slice(0, -1);
+    folder = folder.join("/");
   }
 
-  fs.readdirSync(folderPath).forEach(fileName => {
+  fs.readdirSync(folder).forEach(fileName => {
     if (fileName === newName) {
       throw Error("Filename already exists!");
     }
   });
 
-  oldPath = oldPath.join("/");
-  newPath = `${folderPath}/${newName}`;
-
-  fs.renameSync(oldPath, newPath);
+  // fs.renameSync(path.join("/", `${folderPath}/${newName}`);
+  fs.rename(path.join("/"), `${folder}/${name}`, error => console.log(error));
 };
 
 remove = path => {
   let stats = fs.statSync(path);
   if (stats.isDirectory()) {
-    fs.rmdirSync(path);
+    fs.rmdir(path, error => console.log(error));
   } else {
-    fs.unlinkSync(path);
+    fs.unlink(path, error => console.log(error));
   }
 };
 
@@ -70,18 +68,18 @@ filter = input => {
   const absolutePath = path.resolve(`${input.join("/")}`);
   const relativePath = `${__dirname}/${input.join("/")}`;
 
-  console.log(`Absolute Path: ${absolutePath}`);
-  console.log(`Relative Path: ${relativePath}`);
+  // console.log(`Absolute Path: ${absolutePath}`);
+  // console.log(`Relative Path: ${relativePath}`);
 
+  const stats = fs.statSync(absolutePath);
   if (absolutePath !== relativePath) {
     throw new Error("Absolute and relative paths do not match.");
   }
-  fs.statSync(absolutePath);
 
   return absolutePath;
 };
 
-getRequestingIP = request => {
+getIP = request => {
   const ip =
     // request.headers["x-forwarded-for"].split(",").pop() ||
     request.connection.remoteAddress ||
@@ -91,7 +89,7 @@ getRequestingIP = request => {
 };
 
 refresh = () => {
-  return traverseDirectory("./");
+  return traverse("./");
 };
 
 const port = process.env.PORT || 5000;
@@ -103,7 +101,6 @@ let root = traverse("./");
  * 1. DO NOT leak errors.
  * 2. DO NOT reveal exterior directories.
  * 3. CHECK user credentials before dispatching resources.
- * 4. STICK to a uniform format.
  */
 
 app.use(express.static(path.join(__dirname, "../client/build")));
@@ -127,7 +124,7 @@ app.post("/auth/login", (request, response) => {
 app.post("/auth/logout", (request, response) => {});
 
 app.post("/api/files", (request, response) => {
-  console.log(`Token: ${JSON.stringify(request.body)}`);
+  // console.log(`Token: ${JSON.stringify(request.body)}`);
   response.send(root);
 });
 
@@ -145,7 +142,7 @@ app.post("/api/rename", (request, response) => {
     const absolutePath = filter(request.body.oldPath);
     rename(absolutePath, request.body.newName);
     response.send("Filename successfully changed.");
-    root = reset();
+    root = refresh();
   } catch (error) {
     response.status(500);
   }
@@ -153,8 +150,8 @@ app.post("/api/rename", (request, response) => {
 
 app.post("/api/delete", (request, response) => {
   try {
-    const absolutePath = filter(request.body);
-    delete(absolutePath);
+    const path = filter(request.body);
+    delete(path);
     response.send("File successfully deleted.");
     root = reset();
   } catch (error) {
